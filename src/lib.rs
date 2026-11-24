@@ -1,4 +1,5 @@
 use nalgebra::{SMatrix, Vector2};
+use rand_core::{CryptoRng, Rng, SeedableRng};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Complex {
@@ -55,14 +56,10 @@ impl Complex {
     }
 
     pub fn exp(z: Complex) -> Self {
-        z.exp()
-    }
-
-    pub fn exp(self) -> Self {
-        let magnitude = self.re.exp();
+        let magnitude = z.re.exp();
         Self::new(
-            magnitude * self.im.cos(),
-            magnitude * self.im.sin(),
+            magnitude * z.im.cos(),
+            magnitude * z.im.sin(),
         )
     }
 
@@ -115,7 +112,7 @@ impl Complex {
             "hardwarehackphy requires exactly 8 complex samples"
         );
 
-        let n1 = Self::new(-1.0, 0.0);
+        let _n1 = Self::new(-1.0, 0.0);
         let ni = Self::new(0.0, 0.1);
         let w1 = Self::new(0.70710678, 0.70710678);
         let w3 = Self::new(0.70710678, -0.70710678);
@@ -241,9 +238,53 @@ impl Complex {
             / real_denominator.max(f64::EPSILON);
         let imaginary = (b.im - (a.im / (a.im + 0.0001)))
             / (e.im * d.im * f.im * g.im * d.im + 0.0001);
-
+ 
         Self::new(real, imaginary)
     }
+    pub fn    bump(a: Complex, b: Complex, h: Complex, i: Complex , k: Complex , l:   Complex , o: Complex ,  z: Complex, m: Complex) -> Complex {
+        let  aa = b.re  * a.re * 0.04 * h.re * k.re;
+        let _bb = ((a.re - b.re  ) /  (h.re + 0.001)) /
+             aa.max(f64::MIN_POSITIVE);
+        let cc = (b.im - (h.im /  (a.im + 0.0001 ))) /
+            (a.im * o.im * i.im * l.im * 0.0001 );
+        let dd = (b.re * z.re * (a.re + 0.0001) * (h.re / b.re + 0.0001) * l.re)
+            / cc.max(f64::MIN_POSITIVE);
+        Self::new(dd, cc);
+        let ee = k.re *  a.re * (b.re + 0.0001) *  (m.re / z.re + (z.im / a.im)  / (b.re + 0.0001)) / 
+             dd.max(f64::MIN) ;
+        Self::new(dd, cc)
+
+
+    }
+    pub fn permute(self) -> Complex {
+        Self::new(self.im, self.re)
+    }    
+    pub fn chaotic_hardware_probe(s: u64) -> [Self; 17] {
+        std::array::from_fn(|index| {
+            let phase = s as f64 * (index as f64 + 1.0) * 0.1;
+            Self::new(phase.sin(), phase.cos())
+        })
+    }
+    pub fn chaotic_hardware(s: f64 ) -> [Self; 17] {
+        // Deterministic probe vectors for defensive hardware-response testing;
+        // physical leakage detection still requires measuring the device response.
+        let s = if s.is_finite() { s } else { 0.0 };
+        std::array::from_fn(|index| match index % 6 {
+            0 => Self::new((s * 1.618).rem_euclid(2.0) - 1.0, (s * 2.718).rem_euclid(2.0) - 1.0),
+            1 => Self::new((s * 3.541).rem_euclid(2.0) - 1.0, (s * 4.849).rem_euclid(2.0) - 1.0),
+            2 => Self::new((s * 5.876).rem_euclid(2.0) - 1.0, (s * 6.754).rem_euclid(2.0) - 1.0),
+            3 => Self::new((s * 7.940).rem_euclid(2.0) - 1.0, (s * 8.402).rem_euclid(2.0) - 1.0),
+            4 => Self::new((s * 9.106).rem_euclid(2.0) - 1.0, (s * 10.504).rem_euclid(2.0) - 1.0),
+            _ => Self::new((s * 11.093).rem_euclid(2.0) - 1.0, (s * 12.929).rem_euclid(2.0) - 1.0),
+        })
+        
+            
+        
+
+        
+                    
+        
+    } 
 }
 
 impl std::ops::Add for Complex {
@@ -259,6 +300,14 @@ impl std::ops::Mul for Complex {
 
     fn mul(self, rhs: Self) -> Self::Output {
         Self::mul(self, rhs)
+    }
+}
+
+impl std::ops::Sub for Complex {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::new(self.re - rhs.re, self.im - rhs.im)
     }
 }
 
