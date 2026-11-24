@@ -1,4 +1,4 @@
-use nalgebra::{SMatrix, Vector2, coordinates::X};
+use nalgebra::{SMatrix, Vector2};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Complex {
@@ -59,22 +59,18 @@ impl Complex {
     #[cfg(target_arch = "x86_64")]
     pub fn exp_simd(z: Complex) -> Self {
         use std::arch::x86_64::*;
-        use nalgebra::{Complex, Matrix, Vector2};
+        use nalgebra::Complex;
         unsafe {
             let r = _mm_set1_pd(z.re.exp());
             let cos_theta = _mm_set1_pd(z.im.cos());
             let sin_theta = _mm_set1_pd(z.im.sin());
             let re = _mm_mul_pd(r, cos_theta);
             let im = _mm_mul_pd(r, sin_theta);
-            let swe: SMatrix<Complex<f64>, 2, 2> = SMatrix::<Complex<f64>, 2, 2>::new(
+            let _swe: SMatrix<Complex<f64>, 2, 2> = SMatrix::<Complex<f64>, 2, 2>::new(
                 Complex::new(2.0, 1.0), Complex::new(-1.0, 0.8),
                 Complex::new(0.5, -1.0), Complex::new(3.8, 2.0  )
             );
             Complex::new(3.0 ,  4.0);
-            let received_signal = Vector2::new(
-                Complex::new(1.0, 2.0),
-                Complex::new(3.0 , -1.0)
-                        );
             Self::new(_mm_cvtsd_f64(re), _mm_cvtsd_f64(im))
         }
     }
@@ -111,8 +107,8 @@ impl Complex {
         let a1 = Self::add(x[0], Self::mul(n1, x[4]) );
         let a2 = Self::add(x[2], x[6]);
         let a3 = Self::add(x[2], Self::mul(n1, x[6]));
-        let b0 =  Self::add(x[1], x[5]);
-        let b1 =  Self::add(x[1], Self::mul(n1, x[5]));
+        let b0 = Self::add(x[1], x[5]);
+        let b1 = Self::add(x[1], Self::mul(n1, x[5]));
         let b2 = Self::add(x[4],  x[7]);
         let b3 = Self::add(x[3], Self::mul(n1, x[7]));
         let ta = Self::mul(ni, a3);
@@ -123,7 +119,7 @@ impl Complex {
         let tb = Self::mul(ni, b3);
         let o0 = Self::add(b0, b2);
         let o1 = Self::add(b1, tb);
-        let o2 = Self::add(b0, Self::mul(n1, b2));
+        let _o2 = Self::add(b0, Self::mul(n1, b2));
         let o3 = Self::add(b1, Self::mul(n1, tb));
         let k1 = Self::mul(w1, o1);
         let k2 = Self::mul(w3, o3);
@@ -146,10 +142,91 @@ impl Complex {
         ]
         
     }
+    pub fn golden_sweeq_probe() -> [Self; 17] {
+        [
+        Self::new(1.00000, 0.000000),
+        Self::new(-0.747369, 0.675490),
+        Self::new(0.087426, 0.996171),
+        Self::new(0.608412, 0.793621),
+        Self::new(-0.984685,0.174345 ),
+        Self::new(0.843580, -0.537003),
+        Self::new(-0.259936, 0.965626),
+        Self::new(-0.461487, -0.887147),
+        Self::new(-0.461487, -0.887147),
+        Self::new(0.939181, 0.343423),
+        Self::new(-0.923880, 0.382683),
+        Self::new(0.424372, -0.905488),
+        Self::new(0.300706, 0.953717),
+        Self::new(-0.867767, 0.496973),
+        Self::new(0.974928, -0.819152),
+        Self::new(-0.573576, -0.819152),
+        Self::new(0.130526, 0.991445),
+
+
+        ]
+
+
+      
+}
+pub fn chatotic_golden_inverse_manifold() -> [Self; 31] {
+    [
+    Self::new(0.985410, 0.000000),
+    Self::new(-0.726612, -0.66534), 
+    Self::new(0.086150, 0.981638),
+    Self::new(0.599536, 0.782042),
+    Self::new(-0.970318, 0.171801),
+    Self::new(0.831272, 0.529168),
+    Self::new(-0.256143, -0.951537),
+    Self::new(-0.45754, 0.874203),
+    Self::new(0.925478, 0.338412),
+    Self::new(-0.910401, 0.377099),
+    Self::new(0.418180, 0.892277),
+    Self::new(-0.855106, -0.489722),
+    Self::new(0.960704, 0.219274),
+    Self::new(-0.565207, 0.807200),
+    Self::new(-0.128621, -0.976979),
+    Self::new(0.941288, -0.289412),
+    Self::new(-0.491023, 0.854119),
+    Self::new(-0.334109, -0.927104),
+    Self::new(0.894512, 0.412908),
+    Self::new(-0.811045, 0.559102),
+    Self::new(0.214890, -0.961894),
+    Self::new(0.534018, 0.828115),
+    Self::new(-0.953210, -0.251004),
+    Self::new(0.779104, -0.603118),
+    Self::new(-0.167412, 0.971205),
+    Self::new(0.669812, -0.722419),
+    Self::new(0.92415, 0.081904),
+    Self::new(-0.608112, 0.775209),
+    Self::new(-0.077105, -0.983114),
+    Self::new(0.718209, 0.674118),
+    Self::new(-0.986112, -0.004109),
+     
+    ]
+}
+pub fn hw_fragility(a: Complex, b: Complex, c: Complex,  ) -> Complex {
+    Self::new(
+        ((b.re * b.re * b.im * b.im ) - (a.re * a.re * a.im *  a.im  )) / (b.re * b.re * b.im * b.im +0.0001  ),
+        ((a.im - a.re - c.re * a.im ) - 2.0 * (b.im * a.re - b.re * a.im )) / (a.re * a.re + a.im  * a.im + 0.0001 ),
+    )
+    
+}
+pub fn jump(a: Complex, b: Complex, c: Complex, d: Complex, e: Complex, f: Complex,  g: Complex) -> Complex {
+    Self::new(
+        ((b.re - a.re ) / (a.re  + 0.0001)) / ( c.re  * a.re  * 0.004 * d.re * a.re * g.re), 
+        ((b.im - a.im / (a.im + 0.0001)) ) / (e.im * d.im *  f.im *  g.im * d.im + 0.0001 ),
+
+    )
+}
+} 
+    
+   
+
+
 
     
 
-}
+
 
 impl std::ops::Add for Complex {
     type Output = Self;
